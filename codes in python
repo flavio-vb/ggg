@@ -1,0 +1,140 @@
+%matplotlib inline
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+data2 = pd.read_csv("test.csv")
+data1 = pd.read_csv("train.csv")
+data1
+
+data1.info()
+
+sns.countplot(x='type', data=data1)
+#é notável que a quantidade de cada monstro é equilibrada, porém o monstro que mais aparece são ghouls
+
+sns.factorplot(x='type', col='color', kind='count', data=data1)
+#a partir desses gráficosse torna nítido como não podemos definir um monstro por cor
+
+data1.plot.scatter(x='bone_length', y='type')
+#atraves desse grafico vemos que todos os monstros com menos de 0,2 de bone_length são fantasmas
+#também é notável que todos os monstros com mais de 0,7 de bone_length são canibais
+
+data1.plot.scatter(x='rotting_flesh', y='type') 
+#atraves desse grafico vemos que todos os monstros com menos de 0,15 de rooting flesh são goblins
+#também é notável que todos os monstros com mais de 0,85 de bone_length são fantasmas
+
+
+data1.plot.scatter(x='hair_length', y='type')
+#atraves desse grafico vemos que todos os monstros com menos de 0,2 de hair length são fantasmas
+#também é notável que todos os monstros com mais de 0,85 de hair length são canibais
+
+data1.plot.scatter(x='has_soul', y='type')
+#atraves desse grafico vemos que todos os monstros com menos de 0,15 de has_soul são fantasmas
+#também é notável que todos os monstros com mais de 0,85 de has_soul são canibais
+
+from google.colab import files
+data2['type']= 'Ghoul'
+#monstro que mais aparece
+
+#dados sobre o tamanho do osso
+data2_length = data2[data2.bone_length<0.2]
+data2_length_ids = data2_length['id'].tolist()
+data2.loc[data2['id'].isin(data2_length_ids), 'type'] = 'Ghost'
+
+data2_length = data2[data2.bone_length>0.7]
+data2_length_ids = data2_length['id'].tolist()
+data2.loc[data2['id'].isin(data2_length_ids), 'type'] = 'Ghoul'
+
+#dados sobre a carne podre
+data2_length = data2[data2.rotting_flesh<0.15]
+data2_length_ids = data2_length['id'].tolist()
+data2.loc[data2['id'].isin(data2_length_ids), 'type'] = 'Goblin'
+
+data2_length = data2[data2.rotting_flesh>0.85]
+data2_length_ids = data2_length['id'].tolist()
+data2.loc[data2['id'].isin(data2_length_ids), 'type'] = 'Ghost'
+
+#dados sobre o tamanho do cabelo
+data2_length = data2[data2.hair_length<0.2]
+data2_length_ids = data2_length['id'].tolist()
+data2.loc[data2['id'].isin(data2_length_ids), 'type'] = 'Ghost'
+
+data2_length = data2[data2.hair_length>0.85]
+data2_length_ids = data2_length['id'].tolist()
+data2.loc[data2['id'].isin(data2_length_ids), 'type'] = 'Ghoul'
+
+#dados sobre a quantidade de alma
+data2_length = data2[data2.has_soul<0.15]
+data2_length_ids = data2_length['id'].tolist()
+data2.loc[data2['id'].isin(data2_length_ids), 'type'] = 'Ghost'
+
+data2_length = data2[data2.has_soul>0.85]
+data2_length_ids = data2_length['id'].tolist()
+data2.loc[data2['id'].isin(data2_length_ids), 'type'] = 'Ghoul'
+
+data2.loc[:,['id', 'type']].to_csv('ggg_test.csv', index = False)
+#files.download('ggg_test.csv')
+
+data2
+
+ggg = pd.read_csv("ggg_test.csv")
+ggg
+
+from sklearn.naive_bayes import GaussianNB # 1. Escolha do modelo.
+model_bayes = GaussianNB()                 # 2. Escolha dos hiperparâmetros e intanciação.
+
+# 3.1 Feature Matrix
+x_ggg = data1.loc[: ,  ["bone_length",	"rotting_flesh", "hair_length",	"has_soul"	] ]
+x_ggg.head()
+
+# 3.2 Target Array
+y_ggg = data1.type
+y_ggg.head()
+
+# 3.3 Separação do Banco de Dados
+from sklearn.model_selection import train_test_split
+xtrain, xtest, ytrain, ytest = train_test_split(x_ggg, y_ggg, random_state=2020)
+
+# 4 Ajuste o modelo aos dados
+model_bayes.fit(xtrain, ytrain)
+#ERRO OCASIONADO POR SE UTILIZAR STRINGS COMO PARAMETRO
+
+# 4 Ajuste o modelo aos dados
+model_bayes.fit(xtrain, ytrain)
+
+# 5 Faça predições em dados novos
+y_model_bayes = model_bayes.predict(xtest)
+
+y_model_bayes
+
+#SCORE ESPERADDO ATRAVES DO TREINO
+from sklearn.metrics import accuracy_score
+accuracy_score(ytest, y_model_bayes)
+
+#LEVANDO O METODO NAIVE PARA O BANCO DE DADOS TREINO
+x_ggg_test = data2.loc[: ,  ["bone_length",	"rotting_flesh", "hair_length",	"has_soul"	] ]
+
+y_model_bayes = model_bayes.predict(x_ggg_test)
+
+data2
+
+data2.loc[:, 'type'] = y_model_bayes
+
+data2
+
+#IMPORTANDDO PARA O COMPUTADOR
+from google.colab import files
+data2.loc[:,['id', 'type']].to_csv('ggg_test.csv', index = False)
+#files.download('ggg_test.csv')
+
+#nayve bayes
+from sklearn.metrics import confusion_matrix
+
+mat_bayes = confusion_matrix(ytest, y_model_bayes) 
+
+import matplotlib.pyplot as plt
+
+sns.heatmap(mat_bayes, square=True, annot = True)
+plt.xlabel('Valores Preditos')
+plt.ylabel('Valores Reais')
